@@ -1,0 +1,18 @@
+[
+  {
+    "chemicalId": "CHEM001",
+    "productName": "에탄올",
+    "manufacturer": "테스트 제조사",
+    "catNo": "CAT001",
+    "casNo": "64-17-5",
+    "capacity": "500",
+    "unit": "mL",
+    "componentInfo": "Ethanol",
+    "legalRegulation": "",
+    "ghsLabel": "",
+    "physicalProperties": "",
+    "hazardInfo": "",
+    "isComplex": 0,
+    "registeredDate": "2026-06-02"
+  }
+]

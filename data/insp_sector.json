@@ -1,0 +1,9 @@
+[
+  {
+    "sectorId": "INS001",
+    "sectorName": "화재 안전",
+    "sectorDesc": "화재 예방 및 소화설비 점검",
+    "useYn": 1,
+    "regDate": "2026-06-02"
+  }
+]

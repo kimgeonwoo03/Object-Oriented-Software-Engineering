@@ -1,0 +1,13 @@
+[
+  {
+    "labId": "LAB001",
+    "labName": "화학실험실 1",
+    "department": "화학공학과",
+    "building": "공학관",
+    "floor": "3",
+    "roomNo": "301",
+    "managerId": "MGR001",
+    "accessUserInfo": "홍길동, 김철수",
+    "drawingRegistered": 0
+  }
+]
