@@ -1,5 +1,6 @@
 package controller.chemical;
 
+import common.AccessPolicy;
 import common.Role;
 import entity.Chemical;
 import service.ChemicalService;
@@ -22,7 +23,22 @@ public class ChemicalRegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("/chemical/chemicalRegister.jsp").forward(request, response);
+
+        try {
+            Role loginRole = AuthUtil.getLoginRole(request);
+
+            if (!AccessPolicy.canRegisterChemical(loginRole)) {
+                request.setAttribute("errorMessage", "화학물질 등록 화면 접근 권한이 없습니다.");
+                request.getRequestDispatcher("/error.jsp").forward(request, response);
+                return;
+            }
+
+            request.getRequestDispatcher("/chemical/chemicalRegister.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            request.setAttribute("errorMessage", e.getMessage());
+            request.getRequestDispatcher("/error.jsp").forward(request, response);
+        }
     }
 
     @Override
@@ -32,9 +48,9 @@ public class ChemicalRegisterServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         try {
-            String userRole = (String) request.getSession().getAttribute("userRole");
+            Role loginRole = AuthUtil.getLoginRole(request);
 
-            if (!AuthUtil.hasRole(userRole, Role.ADMIN, Role.SAFETY_MANAGER)) {
+            if (!AccessPolicy.canRegisterChemical(loginRole)) {
                 request.setAttribute("errorMessage", "화학물질 등록 권한이 없습니다.");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
                 return;

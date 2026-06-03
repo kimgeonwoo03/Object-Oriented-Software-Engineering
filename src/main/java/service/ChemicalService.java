@@ -44,7 +44,7 @@ public class ChemicalService {
         Chemical chemical = new Chemical();
         chemical.setCasNo(casNo);
 
-        // 실제 KOSHA API 연동 전까지는 테스트용 더미 데이터로 처리
+        // 실제 KOSHA API 연동 전까지는 테스트용 더미 데이터
         chemical.setComponentInfo("KOSHA 조회 결과 예시 구성성분");
         chemical.setLegalRegulation("KOSHA 조회 결과 예시 법적규제");
         chemical.setGhsLabel("KOSHA 조회 결과 예시 GHS 표지");

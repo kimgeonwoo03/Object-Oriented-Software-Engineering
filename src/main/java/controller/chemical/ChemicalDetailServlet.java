@@ -1,5 +1,6 @@
 package controller.chemical;
 
+import common.AccessPolicy;
 import common.Role;
 import entity.Chemical;
 import service.ChemicalService;
@@ -23,9 +24,9 @@ public class ChemicalDetailServlet extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            String userRole = (String) request.getSession().getAttribute("userRole");
+            Role loginRole = AuthUtil.getLoginRole(request);
 
-            if (!AuthUtil.hasRole(userRole, Role.ADMIN, Role.SAFETY_MANAGER, Role.LAB_MANAGER)) {
+            if (!AccessPolicy.canViewChemical(loginRole)) {
                 request.setAttribute("errorMessage", "화학물질 상세 조회 권한이 없습니다.");
                 request.getRequestDispatcher("/error.jsp").forward(request, response);
                 return;

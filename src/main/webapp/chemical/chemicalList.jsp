@@ -1,6 +1,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="entity.Chemical" %>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isELIgnored="false" %>
 
 <%
     List<Chemical> chemicalList = (List<Chemical>) request.getAttribute("chemicalList");
@@ -36,6 +36,8 @@
                 <button type="submit" class="btn">검색</button>
             </form>
 
+            <br>
+
             <a href="${pageContext.request.contextPath}/chemicals/register" class="btn">화학물질 등록</a>
 
             <br><br>
@@ -67,7 +69,7 @@
                     <td><%= chemical.getUnit() %></td>
                     <td><%= chemical.getRegisteredDate() %></td>
                     <td>
-                        <a href="${pageContext.request.contextPath}/chemicals/detail?id=<%= chemical.getChemicalId() %>">
+                        <a href="${pageContext.request.contextPath}/chemicals/detail?chemicalId=<%= chemical.getChemicalId() %>">
                             상세
                         </a>
                     </td>

@@ -1,5 +1,5 @@
 <%@ page import="entity.Chemical" %>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" isELIgnored="false" %>
 
 <%
     Chemical koshaInfo = (Chemical) request.getAttribute("koshaInfo");
@@ -106,9 +106,8 @@
                 </div>
 
                 <button type="submit" class="btn">등록</button>
+                <a href="${pageContext.request.contextPath}/chemicals" class="btn">목록</a>
             </form>
-
-            <a href="${pageContext.request.contextPath}/chemicals" class="btn">목록</a>
         </div>
     </main>
 </div>

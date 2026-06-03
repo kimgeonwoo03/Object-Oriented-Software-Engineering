@@ -1,0 +1,44 @@
+[
+  {
+    "userId": "admin",
+    "password": "1234",
+    "userName": "시스템관리자",
+    "role": "SYSTEM_ADMIN"
+  },
+  {
+    "userId": "group",
+    "password": "1234",
+    "userName": "그룹관리자",
+    "role": "GROUP_ADMIN"
+  },
+  {
+    "userId": "labmanager",
+    "password": "1234",
+    "userName": "연구실책임자",
+    "role": "LAB_MANAGER"
+  },
+  {
+    "userId": "labsafety",
+    "password": "1234",
+    "userName": "연구실안전관리담당자",
+    "role": "LAB_SAFETY_MANAGER"
+  },
+  {
+    "userId": "worker",
+    "password": "1234",
+    "userName": "연구활동종사자",
+    "role": "RESEARCH_WORKER"
+  },
+  {
+    "userId": "safetyteam",
+    "password": "1234",
+    "userName": "안전관리팀 담당자",
+    "role": "SAFETY_TEAM_MANAGER"
+  },
+  {
+    "userId": "external",
+    "password": "1234",
+    "userName": "외부연계시스템",
+    "role": "EXTERNAL_SYSTEM"
+  }
+]
