@@ -1,1 +1,8 @@
-[]
+[ {
+  "journalId" : "ebed363b-7c5a-49a3-a224-3871bfbb4926",
+  "labId" : "LAB-001",
+  "educationDate" : "2026-06-19",
+  "content" : "실험실 안전 관리 및 화재 대피 요령 교육",
+  "attendeeCount" : 10,
+  "authorId" : "safetyteam"
+} ]
