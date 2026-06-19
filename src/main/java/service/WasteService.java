@@ -4,6 +4,7 @@ import entity.WasteDischarge;
 import exception.DuplicateDataException;
 import exception.EmptyFieldException;
 import exception.NotFoundException;
+import repository.LabRepository;
 import repository.WasteRepository;
 import util.ValidationUtil;
 
@@ -12,9 +13,11 @@ import java.util.List;
 public class WasteService {
 
     private WasteRepository wasteRepository = new WasteRepository();
+    private LabRepository labRepository = new LabRepository();
 
     public boolean createWasteDischarge(WasteDischarge waste) {
         validateWaste(waste);
+        checkLabExists(waste.getLabId());
         checkDuplicateWaste(waste.getWasteId());
 
         int result = wasteRepository.insertWaste(waste);
@@ -79,6 +82,12 @@ public class WasteService {
         ValidationUtil.require(waste.getWasteType(), "폐기물 종류");
         ValidationUtil.require(waste.getWasteState(), "폐기물 상태");
         ValidationUtil.require(waste.getUnit(), "단위");
+    }
+
+    private void checkLabExists(String labId) {
+        if (!labRepository.existsLabById(labId)) {
+            throw new NotFoundException("등록된 연구실 정보가 없습니다.");
+        }
     }
 
     private void checkDuplicateWaste(String wasteId) {
