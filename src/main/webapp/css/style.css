@@ -128,3 +128,36 @@ body {
 .table th {
     background-color: #f3f4f6;
 }
+
+.sub-menu {
+    margin: 16px 0;
+}
+
+.sub-menu ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.sub-menu li {
+    margin-bottom: 8px;
+}
+
+.sub-menu a {
+    text-decoration: none;
+    color: #2563eb;
+}
+
+.sub-menu a:hover {
+    text-decoration: underline;
+}
+
+.menu-disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.menu-active a {
+    color: #2563eb;
+    font-weight: bold;
+}

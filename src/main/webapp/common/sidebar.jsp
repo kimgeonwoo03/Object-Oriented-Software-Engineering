@@ -17,7 +17,7 @@
 
             <% if (AccessPolicy.canAccessUserManagement(loginRole)) { %>
             <li>
-                <a href="<%= contextPath %>/users/groups">사용자 관리</a>
+                <a href="<%= contextPath %>/users">사용자 관리</a>
             </li>
             <% } %>
 

@@ -1,10 +1,15 @@
-[
-  {
-    "groupId": "GRP001",
-    "groupName": "안전관리그룹",
-    "managerId": "MGR001",
-    "description": "시스템 테스트용 그룹",
-    "createdDate": "2026-06-02",
-    "status": "ACTIVE"
-  }
-]
+[ {
+  "groupId" : "GRP001",
+  "groupName" : "안전관리그룹",
+  "managerId" : "MGR001",
+  "description" : "시스템 테스트용 그룹",
+  "createdDate" : "2026-06-02",
+  "status" : "ACTIVE"
+}, {
+  "groupId" : "GRP002",
+  "groupName" : "그룹 2",
+  "managerId" : "admin",
+  "description" : "테스트 2",
+  "createdDate" : "2026-06-05",
+  "status" : "ACTIVE"
+} ]

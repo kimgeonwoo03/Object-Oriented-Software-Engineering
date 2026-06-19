@@ -6,19 +6,53 @@ public class AccessPolicy {
     }
 
     public static boolean canAccessUserManagement(Role role) {
+        return role != null;
+    }
+
+    public static boolean canApproveUserRegistration(Role role) {
+        return role == Role.SYSTEM_ADMIN;
+    }
+
+    public static boolean canBulkRegisterUsers(Role role) {
+        return role == Role.SYSTEM_ADMIN;
+    }
+
+    public static boolean canViewUsers(Role role) {
+        return role == Role.SYSTEM_ADMIN
+                || role == Role.GROUP_ADMIN
+                || role == Role.LAB_MANAGER
+                || role == Role.LAB_SAFETY_MANAGER;
+    }
+
+    public static boolean canEditUsers(Role role) {
         return role == Role.SYSTEM_ADMIN
                 || role == Role.GROUP_ADMIN;
     }
 
+    public static boolean canDeleteUsers(Role role) {
+        return role == Role.SYSTEM_ADMIN;
+    }
+
+    public static boolean canEditMyProfile(Role role) {
+        return role != null;
+    }
+
     public static boolean canRegisterGroup(Role role) {
-        return role == Role.SYSTEM_ADMIN
-                || role == Role.GROUP_ADMIN;
+        return role == Role.SYSTEM_ADMIN;
     }
 
     public static boolean canViewGroup(Role role) {
         return role == Role.SYSTEM_ADMIN
-                || role == Role.GROUP_ADMIN
-                || role == Role.SAFETY_TEAM_MANAGER;
+                || role == Role.GROUP_ADMIN;
+    }
+
+    public static boolean canEditGroup(Role role) {
+        return role == Role.SYSTEM_ADMIN
+                || role == Role.GROUP_ADMIN;
+    }
+
+    public static boolean canDeleteGroup(Role role) {
+        return role == Role.SYSTEM_ADMIN;
     }
 
     public static boolean canAccessLabManagement(Role role) {
