@@ -36,3 +36,14 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Node (Playwright 검증 도구) ###
+node_modules/
+package.json
+package-lock.json
+
+### 검증 산출물 ###
+verify_screenshots/
+
+### Claude Code ###
+.claude/
