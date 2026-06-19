@@ -1,69 +1,126 @@
 package repository;
 
 import entity.InspSector;
-import util.JsonFileUtil;
+import util.DBUtil;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class InspectionRepository {
 
-    private static final String INSP_SECTOR_FILE = "insp_sector.json";
-
     public int insertInspSector(InspSector inspSector) {
-        List<InspSector> inspSectorList = JsonFileUtil.readList(INSP_SECTOR_FILE, InspSector.class);
+        String sql = "INSERT INTO inspection_sector (sectorId, sectorName, sectorDesc, useYn, regDate) VALUES (?, ?, ?, ?, ?)";
 
-        inspSectorList.add(inspSector);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        JsonFileUtil.writeList(INSP_SECTOR_FILE, inspSectorList);
+            pstmt.setString(1, inspSector.getSectorId());
+            pstmt.setString(2, inspSector.getSectorName());
+            pstmt.setString(3, inspSector.getSectorDesc());
+            pstmt.setInt(4, inspSector.getUseYn());
+            pstmt.setString(5, inspSector.getRegDate());
 
-        return 1;
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("점검 분야 저장 실패", e);
+        }
     }
 
     public List<InspSector> findAllInspSectors(String filter) {
-        List<InspSector> inspSectorList = JsonFileUtil.readList(INSP_SECTOR_FILE, InspSector.class);
-        List<InspSector> resultList = new ArrayList<>();
+        String sql = "SELECT * FROM inspection_sector";
+        boolean hasFilter = filter != null && !filter.trim().isEmpty();
 
-        if (filter == null || filter.trim().isEmpty()) {
-            return inspSectorList;
+        if (hasFilter) {
+            sql += " WHERE useYn = ?";
         }
 
-        int useYnFilter = Integer.parseInt(filter);
+        List<InspSector> list = new ArrayList<>();
 
-        for (InspSector inspSector : inspSectorList) {
-            if (inspSector.getUseYn() == useYnFilter) {
-                resultList.add(inspSector);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            if (hasFilter) {
+                pstmt.setInt(1, Integer.parseInt(filter));
             }
-        }
 
-        return resultList;
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToInspSector(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("점검 분야 목록 조회 실패", e);
+        }
+        return list;
     }
 
     public InspSector findInspSectorById(String sectorId) {
-        List<InspSector> inspSectorList = JsonFileUtil.readList(INSP_SECTOR_FILE, InspSector.class);
+        String sql = "SELECT * FROM inspection_sector WHERE sectorId = ?";
 
-        for (InspSector inspSector : inspSectorList) {
-            if (inspSector.getSectorId().equals(sectorId)) {
-                return inspSector;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, sectorId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToInspSector(rs);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("점검 분야 조회 실패", e);
         }
-
         return null;
     }
 
     public boolean existsInspSectorName(String sectorName) {
-        List<InspSector> inspSectorList = JsonFileUtil.readList(INSP_SECTOR_FILE, InspSector.class);
+        String sql = "SELECT 1 FROM inspection_sector WHERE sectorName = ?";
 
-        for (InspSector inspSector : inspSectorList) {
-            if (inspSector.getSectorName() != null && inspSector.getSectorName().equals(sectorName)) {
-                return true;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, sectorName);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("점검 분야명 중복 검사 실패", e);
         }
-
-        return false;
     }
 
     public boolean existsInspSectorById(String sectorId) {
-        return findInspSectorById(sectorId) != null;
+        String sql = "SELECT 1 FROM inspection_sector WHERE sectorId = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, sectorId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("점검 분야 ID 중복 검사 실패", e);
+        }
+    }
+
+    private InspSector mapResultSetToInspSector(ResultSet rs) throws SQLException {
+        InspSector sector = new InspSector();
+        sector.setSectorId(rs.getString("sectorId"));
+        sector.setSectorName(rs.getString("sectorName"));
+        sector.setSectorDesc(rs.getString("sectorDesc"));
+        sector.setUseYn(rs.getInt("useYn"));
+        sector.setRegDate(rs.getString("regDate"));
+        return sector;
     }
 }

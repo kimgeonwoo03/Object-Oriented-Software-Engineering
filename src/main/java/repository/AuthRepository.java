@@ -1,23 +1,36 @@
 package repository;
 
 import entity.User;
-import util.JsonFileUtil;
+import util.DBUtil;
 
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class AuthRepository {
 
-    private static final String USER_FILE = "user_info.json";
-
     public User findUserById(String userId) {
-        List<User> userList = JsonFileUtil.readList(USER_FILE, User.class);
+        String sql = "SELECT * FROM users WHERE userId = ?";
 
-        for (User user : userList) {
-            if (user.getUserId() != null && user.getUserId().equals(userId)) {
-                return user;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setUserId(rs.getString("userId"));
+                    user.setPassword(rs.getString("password"));
+                    user.setUserName(rs.getString("userName"));
+                    user.setRole(rs.getString("role"));
+                    return user;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("사용자 조회 실패", e);
         }
-
         return null;
     }
 }

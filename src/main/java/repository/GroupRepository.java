@@ -1,67 +1,128 @@
 package repository;
 
 import entity.Group;
-import util.JsonFileUtil;
+import util.DBUtil;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GroupRepository {
 
-    private static final String GROUP_FILE = "group_info.json";
-
     public int insertGroup(Group group) {
-        List<Group> groupList = JsonFileUtil.readList(GROUP_FILE, Group.class);
+        String sql = "INSERT INTO user_group (groupId, groupName, managerId, description, createdDate, status) VALUES (?, ?, ?, ?, ?, ?)";
 
-        groupList.add(group);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        JsonFileUtil.writeList(GROUP_FILE, groupList);
+            pstmt.setString(1, group.getGroupId());
+            pstmt.setString(2, group.getGroupName());
+            pstmt.setString(3, group.getManagerId());
+            pstmt.setString(4, group.getDescription());
+            pstmt.setString(5, group.getCreatedDate());
+            pstmt.setString(6, group.getStatus());
 
-        return 1;
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("그룹 저장 실패", e);
+        }
     }
 
     public List<Group> findAllGroups() {
-        return JsonFileUtil.readList(GROUP_FILE, Group.class);
+        String sql = "SELECT * FROM user_group";
+        List<Group> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToGroup(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("그룹 전체 조회 실패", e);
+        }
+        return list;
     }
 
     public Group findGroupById(String groupId) {
-        List<Group> groupList = JsonFileUtil.readList(GROUP_FILE, Group.class);
+        String sql = "SELECT * FROM user_group WHERE groupId = ?";
 
-        for (Group group : groupList) {
-            if (group.getGroupId().equals(groupId)) {
-                return group;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToGroup(rs);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("그룹 상세 조회 실패", e);
         }
-
         return null;
     }
 
     public List<Group> findGroupsByCondition(String condition) {
-        List<Group> groupList = JsonFileUtil.readList(GROUP_FILE, Group.class);
-        List<Group> resultList = new ArrayList<>();
-
         if (condition == null || condition.trim().isEmpty()) {
-            return groupList;
+            return findAllGroups();
         }
 
-        String keyword = condition.trim().toLowerCase();
+        String sql = "SELECT * FROM user_group WHERE LOWER(groupId) LIKE ? OR LOWER(groupName) LIKE ? OR LOWER(managerId) LIKE ?";
+        String keyword = "%" + condition.trim().toLowerCase() + "%";
+        List<Group> list = new ArrayList<>();
 
-        for (Group group : groupList) {
-            String groupId = group.getGroupId() == null ? "" : group.getGroupId().toLowerCase();
-            String groupName = group.getGroupName() == null ? "" : group.getGroupName().toLowerCase();
-            String managerId = group.getManagerId() == null ? "" : group.getManagerId().toLowerCase();
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (groupId.contains(keyword)
-                    || groupName.contains(keyword)
-                    || managerId.contains(keyword)) {
-                resultList.add(group);
+            pstmt.setString(1, keyword);
+            pstmt.setString(2, keyword);
+            pstmt.setString(3, keyword);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToGroup(rs));
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("그룹 조건 조회 실패", e);
         }
-
-        return resultList;
+        return list;
     }
 
     public boolean existsGroupById(String groupId) {
-        return findGroupById(groupId) != null;
+        String sql = "SELECT 1 FROM user_group WHERE groupId = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, groupId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("그룹 ID 중복 검사 실패", e);
+        }
+    }
+
+    private Group mapResultSetToGroup(ResultSet rs) throws SQLException {
+        Group group = new Group();
+        group.setGroupId(rs.getString("groupId"));
+        group.setGroupName(rs.getString("groupName"));
+        group.setManagerId(rs.getString("managerId"));
+        group.setDescription(rs.getString("description"));
+        group.setCreatedDate(rs.getString("createdDate"));
+        group.setStatus(rs.getString("status"));
+        return group;
     }
 }

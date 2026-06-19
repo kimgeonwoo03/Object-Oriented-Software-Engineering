@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "wasteId": "WASTE001",
+    "labId": "LAB001",
+    "dischargeDate": "2026-06-15",
+    "wasteType": "폐유기용매",
+    "wasteState": "액체",
+    "quantity": 20.0,
+    "unit": "L",
+    "storageLocation": "공학관 3층 폐기물 보관소",
+    "status": "STORED"
+  }
+]

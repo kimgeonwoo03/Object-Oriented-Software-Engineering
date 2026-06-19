@@ -3,88 +3,129 @@ package repository;
 import entity.DrawingInfo;
 import entity.LabBasicInfo;
 import entity.LabLocationInfo;
-import util.JsonFileUtil;
+import util.DBUtil;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class LabRepository {
 
-    private static final String LAB_FILE = "lab_basic_info.json";
-    private static final String DRAWING_FILE = "drawing_info.json";
-    private static final String LOCATION_FILE = "lab_location_info.json";
-
     public int insertLab(LabBasicInfo lab) {
-        List<LabBasicInfo> labList = JsonFileUtil.readList(LAB_FILE, LabBasicInfo.class);
+        String sql = "INSERT INTO laboratory (labId, labName, department, building, floor, roomNo, managerId, accessUserInfo, drawingRegistered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        labList.add(lab);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        JsonFileUtil.writeList(LAB_FILE, labList);
-
-        return 1;
+            setLabParameters(pstmt, lab);
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 저장 실패", e);
+        }
     }
 
     public int updateLab(LabBasicInfo lab) {
-        List<LabBasicInfo> labList = JsonFileUtil.readList(LAB_FILE, LabBasicInfo.class);
+        String sql = "UPDATE laboratory SET labName = ?, department = ?, building = ?, floor = ?, roomNo = ?, managerId = ?, accessUserInfo = ?, drawingRegistered = ? WHERE labId = ?";
 
-        for (int i = 0; i < labList.size(); i++) {
-            LabBasicInfo savedLab = labList.get(i);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (savedLab.getLabId() != null && savedLab.getLabId().equals(lab.getLabId())) {
-                labList.set(i, lab);
-                JsonFileUtil.writeList(LAB_FILE, labList);
-                return 1;
-            }
+            pstmt.setString(1, lab.getLabName());
+            pstmt.setString(2, lab.getDepartment());
+            pstmt.setString(3, lab.getBuilding());
+            pstmt.setString(4, lab.getFloor());
+            pstmt.setString(5, lab.getRoomNo());
+            pstmt.setString(6, lab.getManagerId());
+            pstmt.setString(7, lab.getAccessUserInfo());
+            pstmt.setInt(8, lab.getDrawingRegistered());
+            pstmt.setString(9, lab.getLabId());
+
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 수정 실패", e);
         }
-
-        return 0;
     }
 
     public List<LabBasicInfo> findAllLabs() {
-        return JsonFileUtil.readList(LAB_FILE, LabBasicInfo.class);
+        String sql = "SELECT * FROM laboratory";
+        List<LabBasicInfo> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSetToLab(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 목록 조회 실패", e);
+        }
+        return list;
     }
 
     public List<LabBasicInfo> findLabsByCondition(String condition, String drawingRegistered) {
-        List<LabBasicInfo> labList = findAllLabs();
-        List<LabBasicInfo> resultList = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM laboratory WHERE 1=1");
+        boolean hasCondition = condition != null && !condition.trim().isEmpty();
+        boolean hasDrawing = drawingRegistered != null && !drawingRegistered.trim().isEmpty();
 
-        String keyword = condition == null ? "" : condition.trim().toLowerCase();
-        String drawingFilter = drawingRegistered == null ? "" : drawingRegistered.trim();
-
-        for (LabBasicInfo lab : labList) {
-            boolean keywordMatched = keyword.isEmpty()
-                    || contains(lab.getLabId(), keyword)
-                    || contains(lab.getLabName(), keyword)
-                    || contains(lab.getDepartment(), keyword)
-                    || contains(lab.getManagerId(), keyword)
-                    || contains(lab.getBuilding(), keyword)
-                    || contains(lab.getFloor(), keyword)
-                    || contains(lab.getRoomNo(), keyword);
-
-            boolean drawingMatched = drawingFilter.isEmpty()
-                    || String.valueOf(lab.getDrawingRegistered()).equals(drawingFilter);
-
-            if (keywordMatched && drawingMatched) {
-                resultList.add(lab);
-            }
+        if (hasCondition) {
+            sql.append(" AND (LOWER(labId) LIKE ? OR LOWER(labName) LIKE ? OR LOWER(department) LIKE ? OR LOWER(managerId) LIKE ? OR LOWER(building) LIKE ? OR LOWER(floor) LIKE ? OR LOWER(roomNo) LIKE ?)");
+        }
+        if (hasDrawing) {
+            sql.append(" AND drawingRegistered = ?");
         }
 
-        return resultList;
-    }
+        List<LabBasicInfo> list = new ArrayList<>();
 
-    private boolean contains(String value, String keyword) {
-        return value != null && value.toLowerCase().contains(keyword);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            int paramIndex = 1;
+            if (hasCondition) {
+                String keyword = "%" + condition.trim().toLowerCase() + "%";
+                for (int i = 0; i < 7; i++) {
+                    pstmt.setString(paramIndex++, keyword);
+                }
+            }
+            if (hasDrawing) {
+                pstmt.setInt(paramIndex, Integer.parseInt(drawingRegistered));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToLab(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 조건 검색 실패", e);
+        }
+        return list;
     }
 
     public LabBasicInfo findLabById(String labId) {
-        List<LabBasicInfo> labList = findAllLabs();
+        String sql = "SELECT * FROM laboratory WHERE labId = ?";
 
-        for (LabBasicInfo lab : labList) {
-            if (lab.getLabId() != null && lab.getLabId().equals(labId)) {
-                return lab;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, labId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToLab(rs);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 조회 실패", e);
         }
-
         return null;
     }
 
@@ -93,64 +134,92 @@ public class LabRepository {
     }
 
     public boolean existsSameLabName(String labName) {
-        List<LabBasicInfo> labList = findAllLabs();
+        String sql = "SELECT 1 FROM laboratory WHERE labName = ?";
 
-        for (LabBasicInfo lab : labList) {
-            if (lab.getLabName() != null && lab.getLabName().equals(labName)) {
-                return true;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, labName);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실명 중복 검사 실패", e);
         }
-
-        return false;
     }
 
     public boolean existsSameLocation(String building, String floor, String roomNo) {
-        List<LabBasicInfo> labList = findAllLabs();
+        String sql = "SELECT 1 FROM laboratory WHERE building = ? AND floor = ? AND roomNo = ?";
 
-        for (LabBasicInfo lab : labList) {
-            boolean sameBuilding = lab.getBuilding() != null && lab.getBuilding().equals(building);
-            boolean sameFloor = lab.getFloor() != null && lab.getFloor().equals(floor);
-            boolean sameRoomNo = lab.getRoomNo() != null && lab.getRoomNo().equals(roomNo);
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (sameBuilding && sameFloor && sameRoomNo) {
-                return true;
+            pstmt.setString(1, building);
+            pstmt.setString(2, floor);
+            pstmt.setString(3, roomNo);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("연구실 위치 중복 검사 실패", e);
         }
-
-        return false;
     }
 
+    // DrawingInfo 로직
     public int insertDrawingInfo(DrawingInfo drawingInfo) {
-        List<DrawingInfo> drawingList = JsonFileUtil.readList(DRAWING_FILE, DrawingInfo.class);
-
-        drawingList.add(drawingInfo);
-
-        JsonFileUtil.writeList(DRAWING_FILE, drawingList);
-
-        return 1;
+        String sql = "INSERT INTO drawing_info (drawingId, labId) VALUES (?, ?)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, drawingInfo.getDrawingId());
+            pstmt.setString(2, drawingInfo.getLabId());
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("도면 정보 저장 실패", e);
+        }
     }
 
     public DrawingInfo findDrawingInfoByLabId(String labId) {
-        List<DrawingInfo> drawingList = JsonFileUtil.readList(DRAWING_FILE, DrawingInfo.class);
-
-        for (DrawingInfo drawingInfo : drawingList) {
-            if (drawingInfo.getLabId() != null && drawingInfo.getLabId().equals(labId)) {
-                return drawingInfo;
+        String sql = "SELECT * FROM drawing_info WHERE labId = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, labId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    DrawingInfo info = new DrawingInfo();
+                    info.setDrawingId(rs.getString("drawingId"));
+                    info.setLabId(rs.getString("labId"));
+                    return info;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("도면 정보 조회 실패", e);
         }
-
         return null;
     }
 
     public DrawingInfo findDrawingInfoById(String drawingId) {
-        List<DrawingInfo> drawingList = JsonFileUtil.readList(DRAWING_FILE, DrawingInfo.class);
-
-        for (DrawingInfo drawingInfo : drawingList) {
-            if (drawingInfo.getDrawingId() != null && drawingInfo.getDrawingId().equals(drawingId)) {
-                return drawingInfo;
+        String sql = "SELECT * FROM drawing_info WHERE drawingId = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, drawingId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    DrawingInfo info = new DrawingInfo();
+                    info.setDrawingId(rs.getString("drawingId"));
+                    info.setLabId(rs.getString("labId"));
+                    return info;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("도면 정보 조회 실패", e);
         }
-
         return null;
     }
 
@@ -158,37 +227,77 @@ public class LabRepository {
         return findDrawingInfoById(drawingId) != null;
     }
 
+    // LabLocationInfo 로직
     public int insertLabLocationInfo(LabLocationInfo locationInfo) {
-        List<LabLocationInfo> locationList = JsonFileUtil.readList(LOCATION_FILE, LabLocationInfo.class);
-
-        locationList.add(locationInfo);
-
-        JsonFileUtil.writeList(LOCATION_FILE, locationList);
-
-        return 1;
+        String sql = "INSERT INTO lab_location_info (locationId, labId) VALUES (?, ?)";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, locationInfo.getLocationId());
+            pstmt.setString(2, locationInfo.getLabId());
+            return pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("위치 정보 저장 실패", e);
+        }
     }
 
     public LabLocationInfo findLabLocationInfoByLabId(String labId) {
-        List<LabLocationInfo> locationList = JsonFileUtil.readList(LOCATION_FILE, LabLocationInfo.class);
-
-        for (LabLocationInfo locationInfo : locationList) {
-            if (locationInfo.getLabId() != null && locationInfo.getLabId().equals(labId)) {
-                return locationInfo;
+        String sql = "SELECT * FROM lab_location_info WHERE labId = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, labId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    LabLocationInfo info = new LabLocationInfo();
+                    info.setLocationId(rs.getString("locationId"));
+                    info.setLabId(rs.getString("labId"));
+                    return info;
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("위치 정보 조회 실패", e);
         }
-
         return null;
     }
 
     public boolean existsLocationById(String locationId) {
-        List<LabLocationInfo> locationList = JsonFileUtil.readList(LOCATION_FILE, LabLocationInfo.class);
-
-        for (LabLocationInfo locationInfo : locationList) {
-            if (locationInfo.getLocationId() != null && locationInfo.getLocationId().equals(locationId)) {
-                return true;
+        String sql = "SELECT 1 FROM lab_location_info WHERE locationId = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, locationId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("위치 ID 중복 검사 실패", e);
         }
+    }
 
-        return false;
+    private void setLabParameters(PreparedStatement pstmt, LabBasicInfo lab) throws SQLException {
+        pstmt.setString(1, lab.getLabId());
+        pstmt.setString(2, lab.getLabName());
+        pstmt.setString(3, lab.getDepartment());
+        pstmt.setString(4, lab.getBuilding());
+        pstmt.setString(5, lab.getFloor());
+        pstmt.setString(6, lab.getRoomNo());
+        pstmt.setString(7, lab.getManagerId());
+        pstmt.setString(8, lab.getAccessUserInfo());
+        pstmt.setInt(9, lab.getDrawingRegistered());
+    }
+
+    private LabBasicInfo mapResultSetToLab(ResultSet rs) throws SQLException {
+        LabBasicInfo lab = new LabBasicInfo();
+        lab.setLabId(rs.getString("labId"));
+        lab.setLabName(rs.getString("labName"));
+        lab.setDepartment(rs.getString("department"));
+        lab.setBuilding(rs.getString("building"));
+        lab.setFloor(rs.getString("floor"));
+        lab.setRoomNo(rs.getString("roomNo"));
+        lab.setManagerId(rs.getString("managerId"));
+        lab.setAccessUserInfo(rs.getString("accessUserInfo"));
+        lab.setDrawingRegistered(rs.getInt("drawingRegistered"));
+        return lab;
     }
 }
